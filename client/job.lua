@@ -285,7 +285,7 @@ function OpenArmoryMenu(PlayerJob)
 end
 
 exports("OpenArmoryMenu", function()
-	return OpenArmoryMenu(PlayerJob)
+	return OpenArmoryMenu(QBCore.Functions.GetPlayerData().job)
 end)
 
 function OpenEvidenceInventory(EvidenceContainer)
