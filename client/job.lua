@@ -36,6 +36,7 @@ end
 
 local currentGarage = 1
 Citizen.CreateThread(function()
+    SetCarItemsInfo()
     while true do
         Citizen.Wait(1)
         if isLoggedIn then
@@ -68,14 +69,7 @@ Citizen.CreateThread(function()
                         if #(pos - vector3(v.x, v.y, v.z)) < 1.0 then
                             DrawText3D(v.x, v.y, v.z, "~g~E~w~ -    Evidence stash")
                             if IsControlJustReleased(0, 38) then
-                                local drawer = Input("Which drawer do you want to look at?", "", 2)
-                                if drawer ~= nil then
-                                    TriggerServerEvent("inventory:server:OpenInventory", "stash", " 1 | Drawer "..drawer, {
-                                        maxweight = 4000000,
-                                        slots = 500,
-                                    })
-                                    TriggerEvent("inventory:client:SetCurrentStash", " 1 | Drawer "..drawer)
-                                end
+                                OpenEvidenceInventory(1)
                             end
                         elseif #(pos - vector3(v.x, v.y, v.z)) < 1.5 then
                             DrawText3D(v.x, v.y, v.z, "Stash 1")
@@ -88,14 +82,7 @@ Citizen.CreateThread(function()
                         if #(pos - vector3(v.x, v.y, v.z)) < 1.0 then
                             DrawText3D(v.x, v.y, v.z, "~g~E~w~ - evidence stash")
                             if IsControlJustReleased(0, 38) then
-                                local drawer = Input("Which drawer do you want to look at?", "", 2)
-                                if drawer ~= nil then
-                                    TriggerServerEvent("inventory:server:OpenInventory", "stash", " 2 | Drawer "..drawer, {
-                                        maxweight = 4000000,
-                                        slots = 500,
-                                    })
-                                    TriggerEvent("inventory:client:SetCurrentStash", " 2 | Drawer "..drawer)
-                                end
+                                OpenEvidenceInventory(2)
                             end
                         elseif #(pos - vector3(v.x, v.y, v.z)) < 1.5 then
                             DrawText3D(v.x, v.y, v.z, "Stash 2")
@@ -108,14 +95,7 @@ Citizen.CreateThread(function()
                         if #(pos - vector3(v.x, v.y, v.z)) < 1.0 then
                             DrawText3D(v.x, v.y, v.z, "~g~E~w~ - Evidence stash")
                             if IsControlJustReleased(0, 38) then
-                                local drawer = Input("Which drawer do you want to look at?", "", 2)
-                                if drawer ~= nil then
-                                    TriggerServerEvent("inventory:server:OpenInventory", "stash", " 3 | Drawer "..drawer, {
-                                        maxweight = 4000000,
-                                        slots = 500,
-                                    })
-                                    TriggerEvent("inventory:client:SetCurrentStash", " 3 | Drawer "..drawer)
-                                end
+                                OpenEvidenceInventory(3)
                             end
                         elseif #(pos - vector3(v.x, v.y, v.z)) < 1.5 then
                             DrawText3D(v.x, v.y, v.z, "Stash 3")
@@ -227,23 +207,7 @@ Citizen.CreateThread(function()
                             if #(pos - vector3(v.x, v.y, v.z)) < 1.5 then
                                 DrawText3D(v.x, v.y, v.z, "~g~E~w~ - Armory")
                                 if IsControlJustReleased(0, 38) then
-                                    local authorizedItems = {
-                                        label = "Police Armory",
-                                        slots = 30,
-                                        items = {}
-                                    }
-                                    local index = 1
-                                    for _, armoryItem in pairs(Config.Items.items) do
-                                        for i=1, #armoryItem.authorizedJobGrades do
-                                            if armoryItem.authorizedJobGrades[i] == PlayerJob.grade.level then
-                                                authorizedItems.items[index] = armoryItem
-                                                authorizedItems.items[index].slot = index
-                                                index = index + 1
-                                            end
-                                        end
-                                    end
-                                    SetWeaponSeries()
-                                    TriggerServerEvent("inventory:server:OpenInventory", "shop", "police", authorizedItems)
+                                    OpenArmoryMenu(PlayerJob)
                                 end
                             elseif #(pos - vector3(v.x, v.y, v.z)) < 2.5 then
                                 DrawText3D(v.x, v.y, v.z, "Armory")
@@ -297,6 +261,46 @@ end)
 
 local inFingerprint = false
 local FingerPrintSessionId = nil
+
+function OpenArmoryMenu(PlayerJob)
+    local authorizedItems = {
+        label = "Police Armory",
+        slots = 30,
+        items = {}
+    }
+    local index = 1
+    for _, armoryItem in pairs(Config.Items.items) do
+        for i=1, #armoryItem.authorizedJobGrades do
+            if armoryItem.authorizedJobGrades[i] == PlayerJob.grade.level then
+                authorizedItems.items[index] = armoryItem
+                authorizedItems.items[index].slot = index
+                index = index + 1
+            end
+        end
+    end
+    SetWeaponSeries()
+    TriggerServerEvent("inventory:server:OpenInventory", "shop", "police", authorizedItems)
+end
+
+exports("OpenArmoryMenu", function()
+	return OpenArmoryMenu(PlayerJob)
+end)
+
+function OpenEvidenceInventory(EvidenceContainer)
+    local drawer = Input("Which drawer do you want to look at?", "", 2)
+        if drawer ~= nil then
+            local inventory = " "..EvidenceContainer.." | Drawer "..drawer
+            TriggerServerEvent("inventory:server:OpenInventory", "stash", inventory, {
+                maxweight = 4000000,
+                slots = 500,
+            })
+            TriggerEvent("inventory:client:SetCurrentStash", inventory)
+        end
+end
+
+exports("OpenEvidenceInventory", function(EvidenceContainer)
+	return OpenEvidenceInventory(EvidenceContainer)
+end)
 
 RegisterNetEvent('police:client:showFingerprint')
 AddEventHandler('police:client:showFingerprint', function(playerId)
