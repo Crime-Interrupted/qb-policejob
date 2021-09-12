@@ -1,9 +1,9 @@
 local Plates = {}
-cuffedPlayers = {}
-PlayerStatus = {}
-Casings = {}
-BloodDrops = {}
-FingerDrops = {}
+local cuffedPlayers = {}
+local PlayerStatus = {}
+local Casings = {}
+local BloodDrops = {}
+local FingerDrops = {}
 local Objects = {}
 
 
@@ -15,10 +15,11 @@ Citizen.CreateThread(function()
     end
 end)
 
+
 RegisterServerEvent('police:server:TakeOutImpound')
 AddEventHandler('police:server:TakeOutImpound', function(plate)
     local src = source       
-    exports['ghmattimysql']:execute('UPDATE player_vehicles SET state = @state WHERE plate = @plate', {['@state'] = 0, ['@plate'] = plate})
+    exports.oxmysql:execute('UPDATE player_vehicles SET state = @state WHERE plate = @plate', {['@state'] = 0, ['@plate'] = plate})
     TriggerClientEvent('QBCore:Notify', src, "Vehicle is taken out of Impound!")  
 end)
 
@@ -352,7 +353,7 @@ AddEventHandler('police:server:Impound', function(plate, fullImpound, price, bod
     local price = price ~= nil and price or 0
     if IsVehicleOwned(plate) then
         if not fullImpound then
-            exports['ghmattimysql']:execute('UPDATE player_vehicles SET state = @state, depotprice = @depotprice, body = @body, engine = @engine, fuel = @fuel WHERE plate = @plate', {
+            exports.oxmysql:execute('UPDATE player_vehicles SET state = @state, depotprice = @depotprice, body = @body, engine = @engine, fuel = @fuel WHERE plate = @plate', {
                 ['@state'] = 0, 
                 ['@depotprice'] = price, 
                 ['@plate'] = plate,
@@ -362,7 +363,7 @@ AddEventHandler('police:server:Impound', function(plate, fullImpound, price, bod
             })
             TriggerClientEvent('QBCore:Notify', src, "Vehicle taken into depot for $"..price.."!")
         else
-            exports['ghmattimysql']:execute('UPDATE player_vehicles SET state = @state, body = @body, engine = @engine, fuel = @fuel WHERE plate = @plate', {
+            exports.oxmysql:execute('UPDATE player_vehicles SET state = @state, body = @body, engine = @engine, fuel = @fuel WHERE plate = @plate', {
                 ['@state'] = 2, 
                 ['@plate'] = plate,
                 ['@body'] = body, 
@@ -372,14 +373,6 @@ AddEventHandler('police:server:Impound', function(plate, fullImpound, price, bod
             TriggerClientEvent('QBCore:Notify', src, "Vehicle completely seized!")
         end
     end
-end)
-
-RegisterServerEvent('police:server:TakeOutImpound')
-AddEventHandler('police:server:TakeOutImpound', function(plate)
-    local src = source       
-    exports['ghmattimysql']:execute('UPDATE player_vehicles SET state = @state WHERE plate = @plate', {['@state'] = 0, ['@plate'] = plate})
-    TriggerClientEvent('QBCore:Notify', src, "Vehicle is taken out of Impound!")
-      
 end)
 
 RegisterServerEvent('evidence:server:UpdateStatus')
@@ -682,13 +675,13 @@ function CreateObjectId()
 end
 
 function IsVehicleOwned(plate)
-    local result = exports.ghmattimysql:scalarSync('SELECT plate FROM player_vehicles WHERE plate = @plate', {['@plate'] = plate})
+    local result = exports.oxmysql:scalarSync('SELECT plate FROM player_vehicles WHERE plate = @plate', {['@plate'] = plate})
     return result
 end
 
 QBCore.Functions.CreateCallback('police:GetImpoundedVehicles', function(source, cb)
     local vehicles = {}
-    exports['ghmattimysql']:execute('SELECT * FROM player_vehicles WHERE state = @state', {['@state'] = 2}, function(result)
+    exports.oxmysql:fetch('SELECT * FROM player_vehicles WHERE state = @state', {['@state'] = 2}, function(result)
         if result[1] ~= nil then
             vehicles = result
         end
@@ -760,7 +753,7 @@ QBCore.Commands.Add("grantlicense", "Grant a license to someone", {{name="id", h
     end
 end)
 
-QBCore.Commands.Add("revokelicense", "Grant a license to someone", {{name="id", help="ID of a person"},{name="license", help="License Type"}}, true, function(source, args)
+QBCore.Commands.Add("revokelicense", "Revoke a license from someone", {{name="id", help="ID of a person"},{name="license", help="License Type"}}, true, function(source, args)
     local source = source
     local Player = QBCore.Functions.GetPlayer(source)
     if Player.PlayerData.job.name == "police" and Player.PlayerData.job.grade.level >= 2 then
